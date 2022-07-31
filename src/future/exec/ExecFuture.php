@@ -589,6 +589,9 @@ final class ExecFuture extends PhutilExecutableFuture {
 
       $pipes = array();
 
+      // patch force LC_CTYPE
+      $this->updateEnv("LC_CTYPE","ja_JP.utf8");
+
       if ($this->hasEnv()) {
         $env = $this->getEnv();
       } else {
