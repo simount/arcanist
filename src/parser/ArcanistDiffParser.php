@@ -745,7 +745,7 @@ final class ArcanistDiffParser extends Phobject {
     // We can get this in git, or in SVN when a file exists in the repository
     // WITHOUT a binary mime-type and is changed and given a binary mime-type.
     $is_binary_diff = preg_match(
-      '/^(Binary files|Files) .* and .* differ$/',
+      '/.*Binary.*differ.*/',
       rtrim($line));
     if ($is_binary_diff) {
       $this->nextNonemptyLine(); // Binary files x and y differ
@@ -1007,22 +1007,28 @@ final class ArcanistDiffParser extends Phobject {
       $is_binary = false;
       if ($this->detectBinaryFiles) {
         $is_binary = !phutil_is_utf8($corpus);
-        $try_encoding = $this->tryEncoding;
-
-        if ($is_binary && $try_encoding) {
-          $is_binary = ArcanistDiffUtils::isHeuristicBinaryFile($corpus);
-          if (!$is_binary) {
-            $corpus = phutil_utf8_convert($corpus, 'UTF-8', $try_encoding);
-            if (!phutil_is_utf8($corpus)) {
-              throw new Exception(
-                pht(
-                  "Failed to convert a hunk from '%s' to UTF-8. ".
-                  "Check that the specified encoding is correct.",
-                  $try_encoding));
+        if ($is_binary) {
+          $try_encoding = $this->tryEncoding;
+          if ($try_encoding) {
+            $is_binary = ArcanistDiffUtils::isHeuristicBinaryFile($corpus);
+            if (!$is_binary) {
+              $corpus = phutil_utf8_convert($corpus, 'UTF-8', $try_encoding);
+              if (!phutil_is_utf8($corpus)) {
+                throw new Exception(
+                  pht(
+                    "Failed to convert a hunk from '%s' to UTF-8. ".
+                    "Check that the specified encoding is correct.",
+                    $try_encoding));
+              }
+            }
+          } else {
+            $a = phutil_utf8_convert($corpus, 'UTF-8', 'SJIS');
+            if (phutil_is_utf8($a)) {
+              $corpus = $a;
+              $is_binary = false;
             }
           }
         }
-
       }
 
       if ($is_binary) {
